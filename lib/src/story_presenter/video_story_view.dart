@@ -76,7 +76,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       } else {
         hasError = true;
         debugPrint('Invalid story item configuration');
-        setState(() {});
+        _scheduleStateUpdate();
         return;
       }
 
@@ -92,8 +92,16 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     } catch (e) {
       hasError = true;
       debugPrint('Error initializing video: $e');
-      setState(() {});
+      _scheduleStateUpdate();
     }
+  }
+
+  void _scheduleStateUpdate() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   Future<void> _preloadNextStory() async {

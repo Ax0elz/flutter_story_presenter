@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+
 import '../models/story_item.dart';
 import '../story_presenter/story_view.dart';
 import '../utils/story_utils.dart';
@@ -33,8 +34,31 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void initState() {
-    _initialiseVideoPlayer();
+    if (widget.storyItem.videoConfig?.externalController != null) {
+      _useExternalController();
+    } else {
+      _initialiseVideoPlayer();
+    }
     super.initState();
+  }
+
+  /// Uses the provided external video controller
+  Future<void> _useExternalController() async {
+    try {
+      videoPlayerController = widget.storyItem.videoConfig!.externalController;
+      if (!videoPlayerController!.value.isInitialized) {
+        await videoPlayerController!.initialize();
+      }
+      widget.onVideoLoad?.call(videoPlayerController!);
+      await videoPlayerController?.play();
+      await videoPlayerController?.setLooping(widget.looping ?? false);
+      await videoPlayerController
+          ?.setVolume(widget.storyItem.isMuteByDefault ? 0 : 1);
+    } catch (e) {
+      hasError = true;
+      debugPrint('$e');
+    }
+    setState(() {});
   }
 
   /// Initializes the video player controller based on the source of the video.
@@ -78,7 +102,10 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void dispose() {
-    videoPlayerController?.dispose();
+    // Only dispose the controller if it's not an external one
+    if (widget.storyItem.videoConfig?.externalController == null) {
+      videoPlayerController?.dispose();
+    }
     super.dispose();
   }
 

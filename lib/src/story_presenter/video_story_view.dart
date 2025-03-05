@@ -58,7 +58,9 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       hasError = true;
       debugPrint('$e');
     }
-    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {});
+    });
   }
 
   /// Initializes the video player controller based on the source of the video.
@@ -95,7 +97,9 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       hasError = true;
       debugPrint('$e');
     }
-    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {});
+    });
   }
 
   BoxFit get fit => widget.storyItem.videoConfig?.fit ?? BoxFit.cover;

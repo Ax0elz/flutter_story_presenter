@@ -33,32 +33,32 @@ class VideoPrecacher {
       final controller = await _preloadedControllers[url];
       _preloadedControllers
           .remove(url); // Remove from cache since it's now being used
-      return controller;
+      return controller!; // We know it's not null because _initializeVideo always returns non-null
     }
 
-    return _initializeVideo(url, videoPlayerOptions: videoPlayerOptions);
+    return await _initializeVideo(url, videoPlayerOptions: videoPlayerOptions);
   }
 
   Future<VideoPlayerController> _initializeVideo(String url,
       {VideoPlayerOptions? videoPlayerOptions}) async {
+    VideoPlayerController controller;
     try {
       final cachedVideo = await _cacheManager.getSingleFile(url);
-      final controller = VideoPlayerController.file(
+      controller = VideoPlayerController.file(
         cachedVideo,
         videoPlayerOptions: videoPlayerOptions,
       );
-      await controller.initialize();
-      return controller;
     } catch (e) {
       debugPrint('Error precaching video: $e');
       // Fallback to network URL if caching fails
-      final controller = VideoPlayerController.networkUrl(
+      controller = VideoPlayerController.networkUrl(
         Uri.parse(url),
         videoPlayerOptions: videoPlayerOptions,
       );
-      await controller.initialize();
-      return controller;
     }
+
+    await controller.initialize();
+    return controller;
   }
 
   /// Clears all preloaded controllers from memory

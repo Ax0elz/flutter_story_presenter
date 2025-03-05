@@ -608,6 +608,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             width: size.width,
             height: size.height,
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               key: ValueKey('$currentIndex'),
               onLongPressDown: (details) => _pauseMedia(),
               onLongPressUp: _resumeMedia,

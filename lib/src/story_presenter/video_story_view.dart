@@ -1,12 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 import '../models/story_item.dart';
 import '../story_presenter/story_view.dart';
-import '../utils/story_utils.dart';
-import '../utils/video_utils.dart';
 
 /// A widget that displays a video story view, supporting different video sources
 /// (network, file, asset) and optional thumbnail and error widgets.
@@ -23,16 +19,12 @@ class VideoStoryView extends StatefulWidget {
   /// The next story item, if any, for precaching
   final StoryItem? nextStoryItem;
 
-  /// Optional external video controller
-  final VideoPlayerController? externalVideoController;
-
   /// Creates a [VideoStoryView] widget.
   const VideoStoryView({
     required this.storyItem,
     this.onVideoLoad,
     this.looping,
     this.nextStoryItem,
-    this.externalVideoController,
     super.key,
   });
 
@@ -46,69 +38,18 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void initState() {
-    if (widget.externalVideoController != null) {
-      videoPlayerController = widget.externalVideoController;
-      _initializeExternalController();
+    videoPlayerController = widget.storyItem.videoConfig?.videoPlayerController;
+    if (videoPlayerController != null) {
+      _initializeController();
     } else {
-      _initialiseVideoPlayer();
-      _precacheNextVideo();
+      hasError = true;
+      debugPrint('No video controller provided in StoryItem videoConfig');
     }
     super.initState();
   }
 
-  /// Precaches the next video if it exists and is a network video
-  void _precacheNextVideo() {
-    if (widget.nextStoryItem != null &&
-        widget.nextStoryItem!.storyItemType.isVideo &&
-        widget.nextStoryItem!.storyItemSource.isNetwork &&
-        widget.nextStoryItem!.url != null) {
-      VideoUtils.instance.preloadVideo(
-        widget.nextStoryItem!.url!,
-        videoPlayerOptions:
-            widget.nextStoryItem!.videoConfig?.videoPlayerOptions,
-      );
-    }
-  }
-
-  /// Initializes the video player controller based on the source of the video.
-  Future<void> _initialiseVideoPlayer() async {
-    try {
-      final storyItem = widget.storyItem;
-      if (storyItem.storyItemSource.isNetwork) {
-        // Initialize video controller for network source.
-        videoPlayerController =
-            await VideoUtils.instance.videoControllerFromUrl(
-          url: storyItem.url!,
-          cacheFile: storyItem.videoConfig?.cacheVideo,
-          videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
-        );
-      } else if (storyItem.storyItemSource.isFile) {
-        // Initialize video controller for file source.
-        videoPlayerController = VideoUtils.instance.videoControllerFromFile(
-          file: File(storyItem.url!),
-          videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
-        );
-      } else {
-        // Initialize video controller for asset source.
-        videoPlayerController = VideoUtils.instance.videoControllerFromAsset(
-          assetPath: storyItem.url!,
-          videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
-        );
-      }
-      await videoPlayerController?.initialize();
-      widget.onVideoLoad?.call(videoPlayerController!);
-      await videoPlayerController?.play();
-      await videoPlayerController?.setLooping(widget.looping ?? false);
-      await videoPlayerController?.setVolume(storyItem.isMuteByDefault ? 0 : 1);
-    } catch (e) {
-      hasError = true;
-      debugPrint('$e');
-    }
-    setState(() {});
-  }
-
-  /// Initializes an external video controller with the widget's settings
-  Future<void> _initializeExternalController() async {
+  /// Initializes the video controller with the widget's settings
+  Future<void> _initializeController() async {
     try {
       if (!videoPlayerController!.value.isInitialized) {
         await videoPlayerController!.initialize();

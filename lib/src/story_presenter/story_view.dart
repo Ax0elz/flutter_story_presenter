@@ -501,7 +501,9 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
                 widget.onVideoLoad?.call(videoPlayer);
                 _startStoryCountdown();
                 if (mounted) {
-                  setState(() {});
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {});
+                  });
                 }
               },
             ),

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+
 import '../models/story_item.dart';
 import '../story_presenter/story_view.dart';
 import '../utils/story_utils.dart';
@@ -19,9 +20,17 @@ class VideoStoryView extends StatefulWidget {
   /// In case of single video story
   final bool? looping;
 
+  /// The next story item, if any, for precaching
+  final StoryItem? nextStoryItem;
+
   /// Creates a [VideoStoryView] widget.
-  const VideoStoryView(
-      {required this.storyItem, this.onVideoLoad, this.looping, super.key});
+  const VideoStoryView({
+    required this.storyItem,
+    this.onVideoLoad,
+    this.looping,
+    this.nextStoryItem,
+    super.key,
+  });
 
   @override
   State<VideoStoryView> createState() => _VideoStoryViewState();
@@ -34,7 +43,22 @@ class _VideoStoryViewState extends State<VideoStoryView> {
   @override
   void initState() {
     _initialiseVideoPlayer();
+    _precacheNextVideo();
     super.initState();
+  }
+
+  /// Precaches the next video if it exists and is a network video
+  void _precacheNextVideo() {
+    if (widget.nextStoryItem != null &&
+        widget.nextStoryItem!.storyItemType.isVideo &&
+        widget.nextStoryItem!.storyItemSource.isNetwork &&
+        widget.nextStoryItem!.url != null) {
+      VideoUtils.instance.preloadVideo(
+        widget.nextStoryItem!.url!,
+        videoPlayerOptions:
+            widget.nextStoryItem!.videoConfig?.videoPlayerOptions,
+      );
+    }
   }
 
   /// Initializes the video player controller based on the source of the video.

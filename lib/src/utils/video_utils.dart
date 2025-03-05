@@ -1,16 +1,18 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:video_player/video_player.dart';
+
+import 'video_precacher.dart';
 
 class VideoUtils {
   VideoUtils._();
 
-  // Cache manager to handle caching of video files.
-  final _cacheManager = DefaultCacheManager();
-
   // Singleton instance of VideoUtils.
   static final VideoUtils instance = VideoUtils._();
+
+  // Cache manager to handle caching of video files.
+  final _cacheManager = DefaultCacheManager();
 
   // Method to create a VideoPlayerController from a URL.
   // If cacheFile is true, it attempts to cache the video file.
@@ -19,23 +21,11 @@ class VideoUtils {
     bool? cacheFile = false,
     VideoPlayerOptions? videoPlayerOptions,
   }) async {
-    try {
-      File? cachedVideo;
-      // If caching is enabled, try to get the cached file.
-      if (cacheFile ?? false) {
-        cachedVideo = await _cacheManager.getSingleFile(url);
-      }
-      // If a cached video file is found, create a VideoPlayerController from it.
-      if (cachedVideo != null) {
-        return VideoPlayerController.file(
-          cachedVideo,
-          videoPlayerOptions: videoPlayerOptions,
-        );
-      }
-    } catch (e) {
-      debugPrint(e.toString());
+    if (cacheFile ?? false) {
+      return VideoPrecacher.instance
+          .getController(url, videoPlayerOptions: videoPlayerOptions);
     }
-    // If no cached file is found, create a VideoPlayerController from the network URL.
+
     return VideoPlayerController.networkUrl(
       Uri.parse(url),
       videoPlayerOptions: videoPlayerOptions,
@@ -62,5 +52,17 @@ class VideoUtils {
       assetPath,
       videoPlayerOptions: videoPlayerOptions,
     );
+  }
+
+  /// Preloads a video from a URL
+  Future<void> preloadVideo(String url,
+      {VideoPlayerOptions? videoPlayerOptions}) {
+    return VideoPrecacher.instance
+        .preloadVideo(url, videoPlayerOptions: videoPlayerOptions);
+  }
+
+  /// Clears all preloaded videos from memory
+  void clearPreloadedVideos() {
+    VideoPrecacher.instance.clearPreloadedVideos();
   }
 }

@@ -249,18 +249,23 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
   void _startStoryCountdown() {
     _currentVideoPlayer?.addListener(videoListener);
     if (_currentVideoPlayer != null) {
+      _animationController?.duration = _currentVideoPlayer?.value.duration;
       return;
     }
 
     if (currentItem.audioConfig != null) {
       _audioPlayer?.durationFuture?.then((v) {
-        _totalAudioDuration = v;
-        _animationController ??= AnimationController(
-          vsync: this,
-          duration: _totalAudioDuration ?? Duration(seconds: 6),
-        );
+        if (!mounted) return;
 
-        _animationController?.duration = v;
+        _totalAudioDuration = v;
+        if (_animationController == null) {
+          _animationController = AnimationController(
+            vsync: this,
+            duration: v,
+          );
+        } else {
+          _animationController?.duration = v;
+        }
 
         _currentProgressAnimation =
             Tween<double>(begin: 0, end: 1).animate(_animationController!)
@@ -273,6 +278,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
           _audioPlayer?.positionStream.listen(audioPositionListener);
       _audioPlayerStateStream = _audioPlayer?.playerStateStream.listen(
         (event) {
+          if (!mounted) return;
           if (event.playing) {
             if (event.processingState == ProcessingState.loading) {
               _pauseMedia();
@@ -286,13 +292,16 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
       return;
     }
 
-    _animationController ??= AnimationController(
-      vsync: this,
-      duration: _totalAudioDuration ?? Duration(seconds: 6),
-    );
-
-    _animationController?.duration =
-        _currentVideoPlayer?.value.duration ?? currentItem.duration;
+    // For non-media content, use the item's specified duration or default
+    final duration = currentItem.duration;
+    if (_animationController == null) {
+      _animationController = AnimationController(
+        vsync: this,
+        duration: duration,
+      );
+    } else {
+      _animationController?.duration = duration;
+    }
 
     _currentProgressAnimation =
         Tween<double>(begin: 0, end: 1).animate(_animationController!)
@@ -368,25 +377,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
 
   /// Plays the next story item.
   void _playNext() async {
-    if (widget.items.length == 1 &&
-        _currentVideoPlayer != null &&
-        widget.restartOnCompleted) {
-      await widget.onCompleted?.call();
-
-      /// In case of story length 1 with video, we won't initialise,
-      /// instead we will loop the video
-      return;
-    }
-    if (_currentVideoPlayer != null &&
-        currentIndex != (widget.items.length - 1)) {
-      /// Dispose the video player only in case of multiple story
-      isCurrentItemLoaded = false;
-      setState(() {});
-      _currentVideoPlayer?.removeListener(videoListener);
-      _currentVideoPlayer?.dispose();
-      _currentVideoPlayer = null;
-    }
-
+    // First check if we're at the last item
     if (currentIndex == widget.items.length - 1) {
       await widget.onCompleted?.call();
       if (widget.restartOnCompleted) {
@@ -400,6 +391,22 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
       return;
     }
 
+    // Handle video cleanup
+    if (_currentVideoPlayer != null) {
+      _currentVideoPlayer?.removeListener(videoListener);
+      await _currentVideoPlayer?.dispose();
+      _currentVideoPlayer = null;
+    }
+
+    // Handle audio cleanup
+    if (_audioPlayer != null) {
+      await _audioPlayer?.dispose();
+      _audioDurationSubscriptionStream?.cancel();
+      _audioPlayerStateStream?.cancel();
+      _audioPlayer = null;
+    }
+
+    // Move to next item
     currentIndex = currentIndex + 1;
     _resetAnimation();
     widget.onStoryChanged?.call(currentIndex);

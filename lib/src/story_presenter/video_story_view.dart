@@ -23,12 +23,16 @@ class VideoStoryView extends StatefulWidget {
   /// The next story item, if any, for precaching
   final StoryItem? nextStoryItem;
 
+  /// Optional external video controller
+  final VideoPlayerController? externalVideoController;
+
   /// Creates a [VideoStoryView] widget.
   const VideoStoryView({
     required this.storyItem,
     this.onVideoLoad,
     this.looping,
     this.nextStoryItem,
+    this.externalVideoController,
     super.key,
   });
 
@@ -42,8 +46,13 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void initState() {
-    _initialiseVideoPlayer();
-    _precacheNextVideo();
+    if (widget.externalVideoController != null) {
+      videoPlayerController = widget.externalVideoController;
+      _initializeExternalController();
+    } else {
+      _initialiseVideoPlayer();
+      _precacheNextVideo();
+    }
     super.initState();
   }
 
@@ -96,6 +105,25 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       debugPrint('$e');
     }
     setState(() {});
+  }
+
+  /// Initializes an external video controller with the widget's settings
+  Future<void> _initializeExternalController() async {
+    try {
+      if (!videoPlayerController!.value.isInitialized) {
+        await videoPlayerController!.initialize();
+      }
+      widget.onVideoLoad?.call(videoPlayerController!);
+      await videoPlayerController?.play();
+      await videoPlayerController?.setLooping(widget.looping ?? false);
+      await videoPlayerController
+          ?.setVolume(widget.storyItem.isMuteByDefault ? 0 : 1);
+      setState(() {});
+    } catch (e) {
+      hasError = true;
+      debugPrint('$e');
+      setState(() {});
+    }
   }
 
   BoxFit get fit => widget.storyItem.videoConfig?.fit ?? BoxFit.cover;

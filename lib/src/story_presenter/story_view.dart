@@ -302,8 +302,8 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     _animationController!.forward();
   }
 
-  /// Listener for the video player's state changes.
   void videoListener() {
+    if (!mounted) return;
     final dur = _currentVideoPlayer?.value.duration.inMilliseconds;
     final pos = _currentVideoPlayer?.value.position.inMilliseconds;
 
@@ -324,6 +324,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
   }
 
   void audioPositionListener(Duration position) {
+    if (!mounted) return;
     final dur = position.inMilliseconds;
     final pos = _totalAudioDuration?.inMilliseconds;
 
@@ -333,16 +334,17 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     }
   }
 
-  /// Listener for the animation progress.
-  void animationListener() {
-    currentItemProgress = _animationController?.value ?? 0;
-  }
-
-  /// Listener for the animation status.
   void animationStatusListener(AnimationStatus status) {
+    if (!mounted) return;
     if (status == AnimationStatus.completed) {
       _playNext();
     }
+  }
+
+  /// Listener for the animation progress.
+  void animationListener() {
+    if (!mounted) return;
+    currentItemProgress = _animationController?.value ?? 0;
   }
 
   /// Pauses the media playback.

@@ -30,6 +30,7 @@ typedef OnSlideDown = void Function(DragUpdateDetails);
 typedef OnSlideStart = void Function(DragStartDetails);
 typedef OnSlideLeft = void Function(DragUpdateDetails);
 typedef OnSlideRight = void Function(DragUpdateDetails);
+typedef OnSlideUp = void Function(DragUpdateDetails);
 
 class FlutterStoryPresenter extends StatefulWidget {
   const FlutterStoryPresenter({
@@ -50,6 +51,7 @@ class FlutterStoryPresenter extends StatefulWidget {
     this.onSlideStart,
     this.onSlideLeft,
     this.onSlideRight,
+    this.onSlideUp,
     super.key,
   }) : assert(initialIndex < items.length);
 
@@ -85,6 +87,9 @@ class FlutterStoryPresenter extends StatefulWidget {
 
   /// Callback function triggered when user drags right the storyview.
   final OnSlideRight? onSlideRight;
+
+  /// Callback function triggered when user drags up the storyview.
+  final OnSlideUp? onSlideUp;
 
   /// Indicates whether the story view should restart from the beginning after all items have been played.
   final bool restartOnCompleted;
@@ -607,7 +612,15 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
               onLongPressEnd: (details) => _resumeMedia(),
               onLongPressCancel: _resumeMedia,
               onVerticalDragStart: widget.onSlideStart?.call,
-              onVerticalDragUpdate: widget.onSlideDown?.call,
+              onVerticalDragUpdate: (details) {
+                if (details.delta.dy > 0) {
+                  // Swiping down
+                  widget.onSlideDown?.call(details);
+                } else if (details.delta.dy < 0) {
+                  // Swiping up
+                  widget.onSlideUp?.call(details);
+                }
+              },
               onHorizontalDragUpdate: (details) {
                 if (details.delta.dx > 0) {
                   // Swiping right

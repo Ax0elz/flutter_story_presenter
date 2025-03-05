@@ -588,7 +588,11 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             width: size.width * .2,
             height: size.height,
             child: GestureDetector(
-              onTap: _playPrevious,
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                widget.onLeftTap?.call();
+                _playPrevious();
+              },
             ),
           ),
         ),
@@ -598,7 +602,11 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             width: size.width * .2,
             height: size.height,
             child: GestureDetector(
-              onTap: _playNext,
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                widget.onRightTap?.call();
+                _playNext();
+              },
             ),
           ),
         ),

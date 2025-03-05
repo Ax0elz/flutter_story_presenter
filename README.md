@@ -473,7 +473,7 @@ class _MyStoryViewState extends State<MyStoryView> {
       height: 4,
       activeColor: Colors.white,
       backgroundCompletedColor: Colors.white,
-      backgroundDisabledColor: Colors.white.withOpacity(0.5),
+      backgroundDisabledColor: Colors.white.withValues(alpha:0.5),
       horizontalGap: 1,
       borderRadius: 1.5,
     );
@@ -696,7 +696,7 @@ class TextOverlayView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha:0.2),
                         blurRadius: 10,
                         spreadRadius: 0,
                       )
@@ -725,7 +725,7 @@ class TextOverlayView extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -740,7 +740,7 @@ class TextOverlayView extends StatelessWidget {
                             decoration: InputDecoration(
                                 hintText: 'Type something...',
                                 hintStyle: TextStyle(
-                                  color: Colors.black.withOpacity(0.6),
+                                  color: Colors.black.withValues(alpha:0.6),
                                 ),
                                 border: InputBorder.none),
                           ),
@@ -760,7 +760,7 @@ class TextOverlayView extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha:0.2),
                           blurRadius: 20,
                         )
                       ]),
@@ -803,7 +803,7 @@ class PostOverlayView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 0,
                     spreadRadius: 0,
                   )

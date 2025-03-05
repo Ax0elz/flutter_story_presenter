@@ -52,22 +52,21 @@ class _HomeState extends State<Home> {
           url: 'assets/fb8512a35d6f4b2e8917b74a048de71a.MP4',
           thumbnail: const Center(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CupertinoActivityIndicator(
-                    radius: 15,
-                  ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Text('Video Loading')
-                ],
-              )),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CupertinoActivityIndicator(
+                radius: 15,
+              ),
+              SizedBox(
+                width: 10,
+              ),
+              Text('Video Loading')
+            ],
+          )),
           videoConfig: const StoryViewVideoConfig(
             fit: BoxFit.cover,
           ),
         ),
-
         StoryItem(
           storyItemType: StoryItemType.custom,
           audioConfig: StoryViewAudioConfig(
@@ -85,7 +84,6 @@ class _HomeState extends State<Home> {
           url:
               "https://images.pexels.com/photos/3225517/pexels-photo-3225517.jpeg?auto=compress&cs=tinysrgb&w=800",
         ),
-
         StoryItem(
             storyItemType: StoryItemType.video,
             url:
@@ -294,7 +292,7 @@ class _MyStoryViewState extends State<MyStoryView> {
       height: 4,
       activeColor: Colors.white,
       backgroundCompletedColor: Colors.white,
-      backgroundDisabledColor: Colors.white.withOpacity(0.5),
+      backgroundDisabledColor: Colors.white.withValues(alpha: 0.5),
       horizontalGap: 1,
       borderRadius: 1.5,
     );
@@ -511,7 +509,7 @@ class TextOverlayView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         spreadRadius: 0,
                       )
@@ -535,7 +533,7 @@ class TextOverlayView extends StatelessWidget {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -554,7 +552,7 @@ class TextOverlayView extends StatelessWidget {
                           decoration: InputDecoration(
                               hintText: 'Type something...',
                               hintStyle: TextStyle(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                               ),
                               border: InputBorder.none),
                         ),
@@ -573,7 +571,7 @@ class TextOverlayView extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 20,
                         )
                       ]),
@@ -616,7 +614,7 @@ class PostOverlayView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 0,
                     spreadRadius: 0,
                   )
@@ -723,7 +721,7 @@ class AudioCustomView1 extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 10,
                 )
               ],
@@ -752,7 +750,7 @@ class AudioCustomView1 extends StatelessWidget {
                           return Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
-                              color: Colors.black.withOpacity(0.54),
+                              color: Colors.black.withValues(alpha: 0.54),
                             ),
                             height: 50,
                             width: 50,
@@ -782,7 +780,7 @@ class AudioCustomView1 extends StatelessWidget {
                       Text(
                         "Andy grammer",
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

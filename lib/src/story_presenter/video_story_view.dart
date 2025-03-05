@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'dart:io';
 
-import '../models/story_item.dart';
-import '../story_presenter/story_view.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_story_presenter/flutter_story_presenter.dart';
+import 'package:flutter_story_presenter/src/utils/video_utils.dart';
+import 'package:video_player/video_player.dart';
 
 /// A widget that displays a video story view, supporting different video sources
 /// (network, file, asset) and optional thumbnail and error widgets.
@@ -38,19 +39,47 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void initState() {
-    videoPlayerController = widget.storyItem.videoConfig?.videoPlayerController;
-    if (videoPlayerController != null) {
-      _initializeController();
-    } else {
-      hasError = true;
-      debugPrint('No video controller provided in StoryItem videoConfig');
-    }
     super.initState();
+    _initializeController();
+    _preloadNextStory(); // Precache next story if applicable
   }
 
-  /// Initializes the video controller with the widget's settings
   Future<void> _initializeController() async {
     try {
+      if (widget.storyItem.videoConfig?.videoPlayerController != null) {
+        // Use pre-initialized controller if provided
+        videoPlayerController =
+            widget.storyItem.videoConfig!.videoPlayerController;
+      } else if (widget.storyItem.storyItemSource == StoryItemSource.network &&
+          widget.storyItem.url != null) {
+        // Create controller with caching for network source
+        videoPlayerController =
+            await VideoUtils.instance.videoControllerFromUrl(
+          url: widget.storyItem.url!,
+          cacheFile: widget.storyItem.videoConfig?.cacheVideo ?? false,
+          videoPlayerOptions: widget.storyItem.videoConfig?.videoPlayerOptions,
+        );
+      } else if (widget.storyItem.storyItemSource == StoryItemSource.file &&
+          widget.storyItem.url != null) {
+        // Create controller for file source (no caching needed)
+        videoPlayerController = VideoUtils.instance.videoControllerFromFile(
+          file: File(widget.storyItem.url!),
+          videoPlayerOptions: widget.storyItem.videoConfig?.videoPlayerOptions,
+        );
+      } else if (widget.storyItem.storyItemSource == StoryItemSource.asset &&
+          widget.storyItem.url != null) {
+        // Create controller for asset source (no caching needed)
+        videoPlayerController = VideoUtils.instance.videoControllerFromAsset(
+          assetPath: widget.storyItem.url!,
+          videoPlayerOptions: widget.storyItem.videoConfig?.videoPlayerOptions,
+        );
+      } else {
+        hasError = true;
+        debugPrint('Invalid story item configuration');
+        setState(() {});
+        return;
+      }
+
       if (!videoPlayerController!.value.isInitialized) {
         await videoPlayerController!.initialize();
       }
@@ -62,12 +91,19 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       setState(() {});
     } catch (e) {
       hasError = true;
-      debugPrint('$e');
+      debugPrint('Error initializing video: $e');
       setState(() {});
     }
   }
 
-  BoxFit get fit => widget.storyItem.videoConfig?.fit ?? BoxFit.cover;
+  Future<void> _preloadNextStory() async {
+    if (widget.nextStoryItem != null &&
+        widget.nextStoryItem!.storyItemSource == StoryItemSource.network &&
+        widget.nextStoryItem!.videoConfig?.cacheVideo == true &&
+        widget.nextStoryItem!.url != null) {
+      await VideoUtils.instance.preloadVideo(widget.nextStoryItem!.url!);
+    }
+  }
 
   @override
   void dispose() {
@@ -75,8 +111,11 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     super.dispose();
   }
 
+  BoxFit get fit => widget.storyItem.videoConfig?.fit ?? BoxFit.cover;
+
   @override
   Widget build(BuildContext context) {
+    // Existing build method remains unchanged
     return Stack(
       alignment: (fit == BoxFit.cover) ? Alignment.topCenter : Alignment.center,
       fit: (fit == BoxFit.cover) ? StackFit.expand : StackFit.loose,
@@ -84,24 +123,18 @@ class _VideoStoryViewState extends State<VideoStoryView> {
         if (widget.storyItem.videoConfig?.loadingWidget != null) ...{
           widget.storyItem.videoConfig!.loadingWidget!,
         } else if (widget.storyItem.thumbnail != null) ...{
-          // Display the thumbnail if provided.
           widget.storyItem.thumbnail!,
         },
         if (widget.storyItem.errorWidget != null && hasError) ...{
-          // Display the error widget if an error occurred.
           widget.storyItem.errorWidget!,
         },
         if (videoPlayerController != null) ...{
           if (widget.storyItem.videoConfig?.useVideoAspectRatio ?? false) ...{
-            // Display the video with aspect ratio if specified.
             AspectRatio(
               aspectRatio: videoPlayerController!.value.aspectRatio,
-              child: VideoPlayer(
-                videoPlayerController!,
-              ),
+              child: VideoPlayer(videoPlayerController!),
             )
           } else ...{
-            // Display the video fitted to the screen.
             FittedBox(
               fit: widget.storyItem.videoConfig?.fit ?? BoxFit.cover,
               alignment: Alignment.center,

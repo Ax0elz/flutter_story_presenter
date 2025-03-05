@@ -88,7 +88,6 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       await videoPlayerController?.setLooping(widget.looping ?? false);
       await videoPlayerController
           ?.setVolume(widget.storyItem.isMuteByDefault ? 0 : 1);
-      _scheduleStateUpdate();
     } catch (e) {
       hasError = true;
       debugPrint('Error initializing video: $e');

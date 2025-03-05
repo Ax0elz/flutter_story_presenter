@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_story_presenter/flutter_story_presenter.dart';
@@ -145,6 +146,7 @@ class _ImageStoryViewState extends State<ImageStoryView> {
 
     /// If the image source is a network URL, use [CachedNetworkImage].
     return CachedNetworkImage(
+      key: ValueKey(widget.storyItem.url),
       imageUrl: widget.storyItem.url!,
       imageBuilder: (context, imageProvider) {
         // Mark the image as loaded once it is built.

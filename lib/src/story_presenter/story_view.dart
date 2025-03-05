@@ -28,6 +28,8 @@ typedef OnAudioLoaded = void Function(AudioPlayer);
 typedef CustomViewBuilder = Widget Function(AudioPlayer);
 typedef OnSlideDown = void Function(DragUpdateDetails);
 typedef OnSlideStart = void Function(DragStartDetails);
+typedef OnSlideLeft = void Function(DragUpdateDetails);
+typedef OnSlideRight = void Function(DragUpdateDetails);
 
 class FlutterStoryPresenter extends StatefulWidget {
   const FlutterStoryPresenter({
@@ -46,6 +48,8 @@ class FlutterStoryPresenter extends StatefulWidget {
     this.footerWidget,
     this.onSlideDown,
     this.onSlideStart,
+    this.onSlideLeft,
+    this.onSlideRight,
     super.key,
   }) : assert(initialIndex < items.length);
 
@@ -75,6 +79,12 @@ class FlutterStoryPresenter extends StatefulWidget {
 
   /// Callback function triggered when user starts drag downs the storyview.
   final OnSlideStart? onSlideStart;
+
+  /// Callback function triggered when user drags left the storyview.
+  final OnSlideLeft? onSlideLeft;
+
+  /// Callback function triggered when user drags right the storyview.
+  final OnSlideRight? onSlideRight;
 
   /// Indicates whether the story view should restart from the beginning after all items have been played.
   final bool restartOnCompleted;
@@ -598,6 +608,15 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
               onLongPressCancel: _resumeMedia,
               onVerticalDragStart: widget.onSlideStart?.call,
               onVerticalDragUpdate: widget.onSlideDown?.call,
+              onHorizontalDragUpdate: (details) {
+                if (details.delta.dx > 0) {
+                  // Swiping right
+                  widget.onSlideRight?.call(details);
+                } else if (details.delta.dx < 0) {
+                  // Swiping left
+                  widget.onSlideLeft?.call(details);
+                }
+              },
             ),
           ),
         ),

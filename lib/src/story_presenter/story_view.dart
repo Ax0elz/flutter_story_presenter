@@ -52,6 +52,7 @@ class FlutterStoryPresenter extends StatefulWidget {
     this.onSlideLeft,
     this.onSlideRight,
     this.onSlideUp,
+    this.enableGestures = true,
     super.key,
   }) : assert(initialIndex < items.length);
 
@@ -108,6 +109,9 @@ class FlutterStoryPresenter extends StatefulWidget {
 
   /// Widget to display text field or other content at the bottom of the screen.
   final Widget? footerWidget;
+
+  /// Indicates whether the story view should enable gestures.
+  final bool enableGestures;
 
   @override
   State<FlutterStoryPresenter> createState() => _FlutterStoryPresenterState();
@@ -582,68 +586,70 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             ),
           ),
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: size.width * .2,
-            height: size.height,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                widget.onLeftTap?.call();
-                _playPrevious();
-              },
+        if (widget.enableGestures) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: size.width * .2,
+              height: size.height,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  widget.onLeftTap?.call();
+                  _playPrevious();
+                },
+              ),
             ),
           ),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: size.width * .2,
-            height: size.height,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                widget.onRightTap?.call();
-                _playNext();
-              },
+          Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              width: size.width * .2,
+              height: size.height,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () {
+                  widget.onRightTap?.call();
+                  _playNext();
+                },
+              ),
             ),
           ),
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: SizedBox(
-            width: size.width,
-            height: size.height,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              key: ValueKey('$currentIndex'),
-              onLongPressDown: (details) => _pauseMedia(),
-              onLongPressUp: _resumeMedia,
-              onLongPressEnd: (details) => _resumeMedia(),
-              onLongPressCancel: _resumeMedia,
-              onVerticalDragStart: widget.onSlideStart?.call,
-              onVerticalDragUpdate: (details) {
-                if (details.delta.dy > 0) {
-                  // Swiping down
-                  widget.onSlideDown?.call(details);
-                } else if (details.delta.dy < 0) {
-                  // Swiping up
-                  widget.onSlideUp?.call(details);
-                }
-              },
-              onHorizontalDragUpdate: (details) {
-                if (details.delta.dx > 0) {
-                  // Swiping right
-                  widget.onSlideRight?.call(details);
-                } else if (details.delta.dx < 0) {
-                  // Swiping left
-                  widget.onSlideLeft?.call(details);
-                }
-              },
+          Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                key: ValueKey('$currentIndex'),
+                onLongPressDown: (details) => _pauseMedia(),
+                onLongPressUp: _resumeMedia,
+                onLongPressEnd: (details) => _resumeMedia(),
+                onLongPressCancel: _resumeMedia,
+                onVerticalDragStart: widget.onSlideStart?.call,
+                onVerticalDragUpdate: (details) {
+                  if (details.delta.dy > 0) {
+                    // Swiping down
+                    widget.onSlideDown?.call(details);
+                  } else if (details.delta.dy < 0) {
+                    // Swiping up
+                    widget.onSlideUp?.call(details);
+                  }
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (details.delta.dx > 0) {
+                    // Swiping right
+                    widget.onSlideRight?.call(details);
+                  } else if (details.delta.dx < 0) {
+                    // Swiping left
+                    widget.onSlideLeft?.call(details);
+                  }
+                },
+              ),
             ),
           ),
-        ),
+        ],
         if (widget.headerWidget != null) ...{
           Align(
             alignment: Alignment.topCenter,

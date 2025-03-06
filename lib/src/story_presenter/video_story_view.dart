@@ -11,18 +11,16 @@ import '../utils/video_utils.dart';
 /// A widget that displays a video story view, supporting different video sources
 /// (network, file, asset) and optional thumbnail and error widgets.
 class VideoStoryView extends StatefulWidget {
-  /// The story item containing video data and configuration.
   final StoryItem storyItem;
-
-  /// Callback function to notify when the video is loaded.
   final OnVideoLoad? onVideoLoad;
-
-  /// In case of single video story
   final bool? looping;
 
-  /// Creates a [VideoStoryView] widget.
-  const VideoStoryView(
-      {required this.storyItem, this.onVideoLoad, this.looping, super.key});
+  const VideoStoryView({
+    required this.storyItem,
+    this.onVideoLoad,
+    this.looping,
+    super.key,
+  });
 
   @override
   State<VideoStoryView> createState() => _VideoStoryViewState();
@@ -31,6 +29,7 @@ class VideoStoryView extends StatefulWidget {
 class _VideoStoryViewState extends State<VideoStoryView> {
   VideoPlayerController? videoPlayerController;
   bool hasError = false;
+  bool isVertical = false;
 
   @override
   void initState() {
@@ -42,13 +41,13 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     super.initState();
   }
 
-  /// Uses the provided external video controller
   Future<void> _useExternalController() async {
     try {
       videoPlayerController = widget.storyItem.videoConfig!.externalController;
       if (!videoPlayerController!.value.isInitialized) {
         await videoPlayerController!.initialize();
       }
+      _checkVideoOrientation();
       widget.onVideoLoad?.call(videoPlayerController!);
       await videoPlayerController?.play();
       await videoPlayerController?.setLooping(widget.looping ?? false);
@@ -63,12 +62,10 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     });
   }
 
-  /// Initializes the video player controller based on the source of the video.
   Future<void> _initialiseVideoPlayer() async {
     try {
       final storyItem = widget.storyItem;
       if (storyItem.storyItemSource.isNetwork) {
-        // Initialize video controller for network source.
         videoPlayerController =
             await VideoUtils.instance.videoControllerFromUrl(
           url: storyItem.url!,
@@ -76,19 +73,18 @@ class _VideoStoryViewState extends State<VideoStoryView> {
           videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
         );
       } else if (storyItem.storyItemSource.isFile) {
-        // Initialize video controller for file source.
         videoPlayerController = VideoUtils.instance.videoControllerFromFile(
           file: File(storyItem.url!),
           videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
         );
       } else {
-        // Initialize video controller for asset source.
         videoPlayerController = VideoUtils.instance.videoControllerFromAsset(
           assetPath: storyItem.url!,
           videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
         );
       }
       await videoPlayerController?.initialize();
+      _checkVideoOrientation();
       widget.onVideoLoad?.call(videoPlayerController!);
       await videoPlayerController?.play();
       await videoPlayerController?.setLooping(widget.looping ?? false);
@@ -102,11 +98,21 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     });
   }
 
+  /// Check if the video is vertical (height > width)
+  void _checkVideoOrientation() {
+    if (videoPlayerController != null &&
+        videoPlayerController!.value.isInitialized) {
+      final aspectRatio = videoPlayerController!.value.aspectRatio;
+      setState(() {
+        isVertical = aspectRatio < 1.0; // Vertical if width < height
+      });
+    }
+  }
+
   BoxFit get fit => widget.storyItem.videoConfig?.fit ?? BoxFit.cover;
 
   @override
   void dispose() {
-    // Only dispose the controller if it's not an external one
     if (widget.storyItem.videoConfig?.externalController == null) {
       videoPlayerController?.dispose();
     }
@@ -115,56 +121,39 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: (fit == BoxFit.cover) ? Alignment.topCenter : Alignment.center,
-      fit: (fit == BoxFit.cover) ? StackFit.expand : StackFit.loose,
-      children: [
-        if (widget.storyItem.videoConfig?.loadingWidget != null) ...{
-          widget.storyItem.videoConfig!.loadingWidget!,
-        } else if (widget.storyItem.thumbnail != null) ...{
-          // Display the thumbnail if provided.
-          widget.storyItem.thumbnail!,
-        },
-        if (widget.storyItem.errorWidget != null && hasError) ...{
-          // Display the error widget if an error occurred.
-          widget.storyItem.errorWidget!,
-        },
-        if (videoPlayerController != null) ...{
-          if (widget.storyItem.videoConfig?.useVideoAspectRatio ?? false) ...{
-            // Display the video with aspect ratio if specified, expanding for vertical videos
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final aspectRatio = videoPlayerController!.value.aspectRatio;
-                final isVerticalVideo = aspectRatio < 1.0;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-                if (isVerticalVideo) {
-                  // For vertical videos, use the full height
-                  return SizedBox(
-                    height: constraints.maxHeight,
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: aspectRatio,
-                        child: VideoPlayer(
-                          videoPlayerController!,
-                        ),
-                      ),
-                    ),
-                  );
-                } else {
-                  // For horizontal videos, use regular AspectRatio
-                  return AspectRatio(
-                    aspectRatio: aspectRatio,
-                    child: VideoPlayer(
-                      videoPlayerController!,
-                    ),
-                  );
-                }
-              },
-            )
-          } else ...{
-            // Display the video fitted to the screen.
+    return Stack(
+      alignment: Alignment.center,
+      fit: StackFit.expand, // Ensure the Stack fills the parent
+      children: [
+        if (videoPlayerController != null &&
+            videoPlayerController!.value.isInitialized) ...[
+          if (isVertical) ...[
+            // For vertical videos, force full height and adjust width
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover, // Fill the screen, cropping if necessary
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: videoPlayerController!.value.size.width,
+                  height: videoPlayerController!.value.size.height,
+                  child: VideoPlayer(videoPlayerController!),
+                ),
+              ),
+            ),
+          ] else if (widget.storyItem.videoConfig?.useVideoAspectRatio ??
+              false) ...[
+            // Use aspect ratio for non-vertical videos if specified
+            AspectRatio(
+              aspectRatio: videoPlayerController!.value.aspectRatio,
+              child: VideoPlayer(videoPlayerController!),
+            ),
+          ] else ...[
+            // Default behavior for non-vertical videos
             FittedBox(
-              fit: widget.storyItem.videoConfig?.fit ?? BoxFit.cover,
+              fit: fit,
               alignment: Alignment.center,
               child: SizedBox(
                 width: widget.storyItem.videoConfig?.width ??
@@ -173,9 +162,22 @@ class _VideoStoryViewState extends State<VideoStoryView> {
                     videoPlayerController!.value.size.height,
                 child: VideoPlayer(videoPlayerController!),
               ),
-            )
-          },
-        }
+            ),
+          ],
+        ],
+        // Loading widget or thumbnail
+        if (videoPlayerController == null ||
+            !videoPlayerController!.value.isInitialized) ...[
+          if (widget.storyItem.videoConfig?.loadingWidget != null) ...[
+            widget.storyItem.videoConfig!.loadingWidget!,
+          ] else if (widget.storyItem.thumbnail != null) ...[
+            widget.storyItem.thumbnail!,
+          ],
+        ],
+        // Error widget
+        if (widget.storyItem.errorWidget != null && hasError) ...[
+          widget.storyItem.errorWidget!,
+        ],
       ],
     );
   }

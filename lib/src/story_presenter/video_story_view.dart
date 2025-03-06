@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:video_player/video_player.dart';
 
 import '../models/story_item.dart';
@@ -49,17 +50,17 @@ class _VideoStoryViewState extends State<VideoStoryView> {
       }
       _checkVideoOrientation();
       widget.onVideoLoad?.call(videoPlayerController!);
-      await videoPlayerController?.play();
       await videoPlayerController?.setLooping(widget.looping ?? false);
       await videoPlayerController
           ?.setVolume(widget.storyItem.isMuteByDefault ? 0 : 1);
+      await videoPlayerController?.play();
     } catch (e) {
       hasError = true;
       debugPrint('$e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {});
+      });
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {});
-    });
   }
 
   Future<void> _initialiseVideoPlayer() async {
@@ -92,19 +93,21 @@ class _VideoStoryViewState extends State<VideoStoryView> {
     } catch (e) {
       hasError = true;
       debugPrint('$e');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {});
+      });
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {});
-    });
   }
 
   /// Check if the video is vertical (height > width)
   void _checkVideoOrientation() {
     if (videoPlayerController != null &&
         videoPlayerController!.value.isInitialized) {
-      final aspectRatio = videoPlayerController!.value.aspectRatio;
-      setState(() {
-        isVertical = aspectRatio < 1.0; // Vertical if width < height
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        final aspectRatio = videoPlayerController!.value.aspectRatio;
+        setState(() {
+          isVertical = aspectRatio < 1.0; // Vertical if width < height
+        });
       });
     }
   }
@@ -121,9 +124,6 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Stack(
       alignment: Alignment.center,
       fit: StackFit.expand, // Ensure the Stack fills the parent

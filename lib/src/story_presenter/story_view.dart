@@ -173,14 +173,14 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     _animationController?.dispose();
     _animationController = null;
     _currentVideoPlayer?.removeListener(videoListener);
-    _currentVideoPlayer?.dispose();
+
     _currentVideoPlayer = null;
     widget.flutterStoryController
       ?..removeListener(_storyControllerListener)
       ..dispose();
     _audioDurationSubscriptionStream?.cancel();
     _audioPlayerStateStream?.cancel();
-    _audioPlayer?.dispose();
+    // _audioPlayer?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -390,7 +390,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
       isCurrentItemLoaded = false;
       setState(() {});
       _currentVideoPlayer?.removeListener(videoListener);
-      await _currentVideoPlayer?.dispose();
+
       _currentVideoPlayer = null;
       if (mounted) {
         setState(() {});
@@ -428,7 +428,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     }
     if (_currentVideoPlayer != null) {
       _currentVideoPlayer?.removeListener(videoListener);
-      _currentVideoPlayer?.dispose();
+
       _currentVideoPlayer = null;
     }
 

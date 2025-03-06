@@ -31,7 +31,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
   VideoPlayerController? videoPlayerController;
   bool hasError = false;
   bool isVertical = false;
-
+  bool _isDisposed = false;
   @override
   void initState() {
     if (widget.storyItem.videoConfig?.externalController != null) {
@@ -43,11 +43,13 @@ class _VideoStoryViewState extends State<VideoStoryView> {
   }
 
   Future<void> _useExternalController() async {
+    if (_isDisposed) return;
     try {
       videoPlayerController = widget.storyItem.videoConfig!.externalController;
       if (!videoPlayerController!.value.isInitialized) {
         await videoPlayerController!.initialize();
       }
+      if (!mounted || _isDisposed) return;
       _checkVideoOrientation();
       widget.onVideoLoad?.call(videoPlayerController!);
       await videoPlayerController?.setLooping(widget.looping ?? false);
@@ -55,6 +57,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
           ?.setVolume(widget.storyItem.isMuteByDefault ? 0 : 1);
       await videoPlayerController?.play();
     } catch (e) {
+      if (!mounted || _isDisposed) return;
       hasError = true;
       debugPrint('$e');
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,6 +67,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
   }
 
   Future<void> _initialiseVideoPlayer() async {
+    if (_isDisposed) return;
     try {
       final storyItem = widget.storyItem;
       if (storyItem.storyItemSource.isNetwork) {
@@ -84,16 +88,20 @@ class _VideoStoryViewState extends State<VideoStoryView> {
           videoPlayerOptions: storyItem.videoConfig?.videoPlayerOptions,
         );
       }
+      if (_isDisposed) return;
       await videoPlayerController?.initialize();
+      if (!mounted || _isDisposed) return;
       _checkVideoOrientation();
       widget.onVideoLoad?.call(videoPlayerController!);
       await videoPlayerController?.play();
       await videoPlayerController?.setLooping(widget.looping ?? false);
       await videoPlayerController?.setVolume(storyItem.isMuteByDefault ? 0 : 1);
     } catch (e) {
+      if (!mounted || _isDisposed) return;
       hasError = true;
       debugPrint('$e');
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _isDisposed) return;
         setState(() {});
       });
     }
@@ -101,8 +109,8 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   /// Check if the video is vertical (height > width)
   void _checkVideoOrientation() {
-    if (videoPlayerController != null &&
-        videoPlayerController!.value.isInitialized) {
+    if (_isDisposed || videoPlayerController == null || !mounted) return;
+    if (videoPlayerController!.value.isInitialized) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         final aspectRatio = videoPlayerController!.value.aspectRatio;
         setState(() {
@@ -116,6 +124,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     if (widget.storyItem.videoConfig?.externalController == null) {
       videoPlayerController?.dispose();
     }
@@ -124,6 +133,7 @@ class _VideoStoryViewState extends State<VideoStoryView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isDisposed) return const SizedBox.shrink();
     return Stack(
       alignment: Alignment.center,
       fit: StackFit.expand, // Ensure the Stack fills the parent

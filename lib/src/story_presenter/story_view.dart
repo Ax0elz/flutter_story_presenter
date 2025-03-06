@@ -602,7 +602,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             width: size.width * .2,
             height: size.height,
             child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
+              behavior: HitTestBehavior.translucent,
               onTap: () {
                 widget.onRightTap?.call();
                 _playNext();
@@ -616,7 +616,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             width: size.width,
             height: size.height,
             child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
+              behavior: HitTestBehavior.translucent,
               key: ValueKey('$currentIndex'),
               onLongPressDown: (details) => _pauseMedia(),
               onLongPressUp: _resumeMedia,

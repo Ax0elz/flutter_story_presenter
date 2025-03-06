@@ -131,12 +131,35 @@ class _VideoStoryViewState extends State<VideoStoryView> {
         },
         if (videoPlayerController != null) ...{
           if (widget.storyItem.videoConfig?.useVideoAspectRatio ?? false) ...{
-            // Display the video with aspect ratio if specified.
-            AspectRatio(
-              aspectRatio: videoPlayerController!.value.aspectRatio,
-              child: VideoPlayer(
-                videoPlayerController!,
-              ),
+            // Display the video with aspect ratio if specified, expanding for vertical videos
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final aspectRatio = videoPlayerController!.value.aspectRatio;
+                final isVerticalVideo = aspectRatio < 1.0;
+
+                if (isVerticalVideo) {
+                  // For vertical videos, use the full height
+                  return SizedBox(
+                    height: constraints.maxHeight,
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: aspectRatio,
+                        child: VideoPlayer(
+                          videoPlayerController!,
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  // For horizontal videos, use regular AspectRatio
+                  return AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: VideoPlayer(
+                      videoPlayerController!,
+                    ),
+                  );
+                }
+              },
             )
           } else ...{
             // Display the video fitted to the screen.

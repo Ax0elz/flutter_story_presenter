@@ -151,6 +151,8 @@ class _ImageStoryViewState extends State<ImageStoryView> {
 
     /// If the image source is a network URL, use [CachedNetworkImage].
     return CachedNetworkImage(
+      fadeInDuration: const Duration(milliseconds: 100),
+      fadeOutDuration: const Duration(milliseconds: 100),
       key: ValueKey(widget.storyItem.url),
       imageUrl: widget.storyItem.url!,
       cacheKey: imageConfig?.cacheKey,

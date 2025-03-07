@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_story_presenter/src/models/story_view_audio_config.dart';
 
 class StoryViewImageConfig {
@@ -9,6 +9,7 @@ class StoryViewImageConfig {
     this.width,
     this.progressIndicatorBuilder,
     this.audioConfig,
+    this.cacheKey,
   });
 
   /// Height for the ImageBuilder
@@ -25,4 +26,7 @@ class StoryViewImageConfig {
   /// Progress Indicator for building image
   final Widget Function(BuildContext, String, DownloadProgress)?
       progressIndicatorBuilder;
+
+  /// Optional cache key to use for caching the image
+  final String? cacheKey;
 }

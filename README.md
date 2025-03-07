@@ -707,7 +707,7 @@ class TextOverlayView extends StatelessWidget {
                       height: 20,
                     ),
                     const Text(
-                      "What’s your favorite outdoor activity and why?",
+                      "What's your favorite outdoor activity and why?",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.black,
@@ -883,7 +883,38 @@ class PostOverlayView extends StatelessWidget {
     );
   }
 }
+
+## Image Caching Optimization
+
+To improve image loading performance, you can use the `cacheKey` and `cacheManager` parameters in `StoryViewImageConfig`:
+
+```dart
+// Create a custom cache manager (you can also use your own shared instance)
+final customCacheManager = CacheManager(
+  Config(
+    'customCacheKey',
+    stalePeriod: const Duration(days: 7),
+    maxNrOfCacheObjects: 100,
+  ),
+);
+
+// Use it in your StoryItem
+StoryItem(
+  url: 'https://example.com/image.jpg',
+  storyItemType: StoryItemType.image,
+  imageConfig: StoryViewImageConfig(
+    cacheKey: 'unique_cache_key_for_image',
+    cacheManager: customCacheManager,
+    fit: BoxFit.cover,
+  ),
+)
 ```
+
+By providing a custom `cacheKey` and `cacheManager`, you can:
+
+1. Ensure that the same image is not cached multiple times
+2. Share the cache across different parts of your app
+3. Control cache expiration and size limits
 
 ## Team Devkrest
 We would like to extend our heartfelt thanks to the following contributors for their invaluable contributions to this package.

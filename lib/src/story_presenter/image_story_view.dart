@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_story_presenter/flutter_story_presenter.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -20,10 +21,14 @@ class ImageStoryView extends StatefulWidget {
   /// Callback function to notify when the audio is loaded.
   final OnAudioLoaded? onAudioLoaded;
 
+  /// Cache manager for the image.
+  final CacheManager? imageCacheManager;
+
   const ImageStoryView({
     required this.storyItem,
     this.onImageLoaded,
     this.onAudioLoaded,
+    this.imageCacheManager,
     super.key,
   });
 
@@ -148,6 +153,8 @@ class _ImageStoryViewState extends State<ImageStoryView> {
     return CachedNetworkImage(
       key: ValueKey(widget.storyItem.url),
       imageUrl: widget.storyItem.url!,
+      cacheKey: imageConfig?.cacheKey,
+      cacheManager: widget.imageCacheManager,
       imageBuilder: (context, imageProvider) {
         // Mark the image as loaded once it is built.
         markImageAsLoaded();

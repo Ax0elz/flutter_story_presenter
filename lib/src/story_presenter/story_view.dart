@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_story_presenter/src/story_presenter/story_custom_view_wrapper.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart';
@@ -53,6 +54,7 @@ class FlutterStoryPresenter extends StatefulWidget {
     this.onSlideRight,
     this.onSlideUp,
     this.enableGestures = true,
+    this.imageCacheManager,
     super.key,
   }) : assert(initialIndex < items.length);
 
@@ -113,6 +115,9 @@ class FlutterStoryPresenter extends StatefulWidget {
   /// Indicates whether the story view should enable gestures.
   final bool enableGestures;
 
+  /// Cache manager for the image.
+  final CacheManager? imageCacheManager;
+
   @override
   State<FlutterStoryPresenter> createState() => _FlutterStoryPresenterState();
 }
@@ -130,6 +135,16 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
   Duration? _totalAudioDuration;
   StreamSubscription? _audioDurationSubscriptionStream;
   StreamSubscription? _audioPlayerStateStream;
+  // Compute the CacheManager to use
+  CacheManager get cacheManager =>
+      widget.imageCacheManager ??
+      CacheManager(
+        Config(
+          'defaultImageCache',
+          maxNrOfCacheObjects: 50,
+          stalePeriod: const Duration(days: 7),
+        ),
+      );
 
   @override
   void initState() {
@@ -147,6 +162,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     _startStoryView();
 
     WidgetsBinding.instance.addObserver(this);
+    _preloadNextImage();
 
     super.initState();
   }
@@ -183,6 +199,21 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     // _audioPlayer?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _preloadNextImage() {
+    if (currentIndex + 1 < widget.items.length) {
+      final nextItem = widget.items[currentIndex + 1];
+      if (nextItem.storyItemType.isImage &&
+          !nextItem.storyItemSource.isAsset &&
+          !nextItem.storyItemSource.isFile) {
+        // Use the cacheManager directly instead of ImagePrecacher
+        cacheManager.getSingleFile(
+          nextItem.url!,
+          key: nextItem.imageConfig?.cacheKey ?? nextItem.url,
+        );
+      }
+    }
   }
 
   /// Returns the current story item.
@@ -417,6 +448,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     if (mounted) {
       setState(() {});
     }
+    _preloadNextImage();
   }
 
   /// Plays the previous story item.
@@ -449,6 +481,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     if (mounted) {
       setState(() {});
     }
+    _preloadNextImage();
   }
 
   @override
@@ -486,6 +519,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
         if (currentItem.storyItemType.isImage) ...{
           Positioned.fill(
             child: ImageStoryView(
+              imageCacheManager: widget.imageCacheManager,
               key: ValueKey('$currentIndex'),
               storyItem: currentItem,
               onImageLoaded: (isLoaded) {
@@ -560,6 +594,7 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             padding: storyViewIndicatorConfig.margin,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 _currentVideoPlayer != null
                     ? SmoothVideoProgress(

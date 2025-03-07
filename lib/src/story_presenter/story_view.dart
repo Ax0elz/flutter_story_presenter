@@ -140,9 +140,14 @@ class FlutterStoryPresenter extends StatefulWidget {
 
 class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  AnimationController? _animationController;
-  Animation? _currentProgressAnimation;
+  AnimationController? _animationController; // For story duration
+  AnimationController? _slideController; // For slide transition
+  Animation<double>? _slideAnimation;
   int currentIndex = 0;
+  int? transitioningToIndex; // Track the next index during transition
+
+  Animation? _currentProgressAnimation;
+
   bool isCurrentItemLoaded = false;
   double currentItemProgress = 0;
   VideoPlayerController? _currentVideoPlayer;
@@ -172,6 +177,10 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     _animationController = AnimationController(
       vsync: this,
       duration: _totalAudioDuration ?? Duration(seconds: 6),
+    );
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300), // Slide duration
     );
     currentIndex = widget.initialIndex;
     widget.flutterStoryController?.addListener(_storyControllerListener);
@@ -205,7 +214,10 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
     _animationController?.dispose();
     _animationController = null;
     _currentVideoPlayer?.removeListener(videoListener);
+    _slideController?.dispose();
+    _slideController = null;
 
+    _slideAnimation = null;
     _currentVideoPlayer = null;
     widget.flutterStoryController
       ?..removeListener(_storyControllerListener)
@@ -457,14 +469,19 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
       return;
     }
 
-    currentIndex = currentIndex + 1;
-    _resetAnimation();
-    widget.onStoryChanged?.call(currentIndex);
-    _playMedia();
-    if (mounted) {
+    // Start slide transition
+    transitioningToIndex = currentIndex + 1;
+    setState(() {});
+    _slideController!.forward().then((_) {
+      currentIndex = transitioningToIndex!;
+      transitioningToIndex = null;
+      _resetAnimation();
+      widget.onStoryChanged?.call(currentIndex);
+      _playMedia();
+      _slideController!.reset();
       setState(() {});
-    }
-    _preloadNextImage();
+      _preloadNextImage();
+    });
   }
 
   /// Plays the previous story item.
@@ -490,14 +507,19 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
       return;
     }
 
-    _resetAnimation();
-    currentIndex = currentIndex - 1;
-    widget.onStoryChanged?.call(currentIndex);
-    _playMedia();
-    if (mounted) {
+    // Start slide transition (reverse direction)
+    transitioningToIndex = currentIndex - 1;
+    setState(() {});
+    _slideController!.reverse(from: 1.0).then((_) {
+      currentIndex = transitioningToIndex!;
+      transitioningToIndex = null;
+      _resetAnimation();
+      widget.onStoryChanged?.call(currentIndex);
+      _playMedia();
+      _slideController!.reset();
       setState(() {});
-    }
-    _preloadNextImage();
+      _preloadNextImage();
+    });
   }
 
   @override
@@ -532,14 +554,12 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
             ),
           ),
         },
-        if (currentItem.storyItemType.isImage) ...{
+        if (currentItem.storyItemType.isImage) ...[
           Positioned.fill(
             child: ImageStoryView(
               imageCacheManager: widget.imageCacheManager,
-              fadeInDuration: widget.imageFadeInDuration,
-              fadeOutDuration: widget.imageFadeOutDuration,
-              fadeInCurve: widget.imageFadeInCurve,
-              fadeOutCurve: widget.imageFadeOutCurve,
+              fadeInDuration: const Duration(milliseconds: 0), // No fade
+              fadeOutDuration: const Duration(milliseconds: 0), // No fade
               key: ValueKey('$currentIndex'),
               storyItem: currentItem,
               onImageLoaded: (isLoaded) {
@@ -549,12 +569,37 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
               onAudioLoaded: (audioPlayer) {
                 _audioPlayer = audioPlayer;
                 isCurrentItemLoaded = true;
-
                 _startStoryCountdown();
               },
             ),
           ),
-        },
+          if (transitioningToIndex != null &&
+              widget.items[transitioningToIndex!].storyItemType.isImage)
+            AnimatedBuilder(
+              animation: _slideController!,
+              builder: (context, child) {
+                final nextItem = widget.items[transitioningToIndex!];
+                final isNext = transitioningToIndex! > currentIndex;
+                final offset =
+                    size.width * (isNext ? 1 : -1) * _slideAnimation!.value;
+                return Positioned(
+                  left: offset,
+                  top: 0,
+                  bottom: 0,
+                  width: size.width,
+                  child: ImageStoryView(
+                    imageCacheManager: widget.imageCacheManager,
+                    fadeInDuration: const Duration(milliseconds: 0),
+                    fadeOutDuration: const Duration(milliseconds: 0),
+                    key: ValueKey('$transitioningToIndex'),
+                    storyItem: nextItem,
+                    onImageLoaded: (_) {},
+                    onAudioLoaded: (_) {},
+                  ),
+                );
+              },
+            ),
+        ],
         if (currentItem.storyItemType.isVideo) ...{
           Positioned.fill(
             child: VideoStoryView(

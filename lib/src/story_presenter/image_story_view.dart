@@ -24,11 +24,27 @@ class ImageStoryView extends StatefulWidget {
   /// Cache manager for the image.
   final CacheManager? imageCacheManager;
 
+  /// The duration of the fade in animation.
+  final Duration fadeInDuration;
+
+  /// The duration of the fade out animation.
+  final Duration fadeOutDuration;
+
+  /// The curve of the fade in animation.
+  final Curve fadeInCurve;
+
+  /// The curve of the fade out animation.
+  final Curve fadeOutCurve;
+
   const ImageStoryView({
     required this.storyItem,
     this.onImageLoaded,
     this.onAudioLoaded,
     this.imageCacheManager,
+    this.fadeInDuration = const Duration(milliseconds: 400),
+    this.fadeOutDuration = const Duration(milliseconds: 600),
+    this.fadeInCurve = Curves.easeIn,
+    this.fadeOutCurve = Curves.easeOut,
     super.key,
   });
 
@@ -151,8 +167,10 @@ class _ImageStoryViewState extends State<ImageStoryView> {
 
     /// If the image source is a network URL, use [CachedNetworkImage].
     return CachedNetworkImage(
-      fadeInDuration: const Duration(milliseconds: 100),
-      fadeOutDuration: const Duration(milliseconds: 100),
+      fadeInDuration: widget.fadeInDuration,
+      fadeOutDuration: widget.fadeOutDuration,
+      fadeInCurve: widget.fadeInCurve,
+      fadeOutCurve: widget.fadeOutCurve,
       key: ValueKey(widget.storyItem.url),
       imageUrl: widget.storyItem.url!,
       cacheKey: imageConfig?.cacheKey,

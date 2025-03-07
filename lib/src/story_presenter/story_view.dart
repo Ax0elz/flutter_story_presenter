@@ -55,6 +55,10 @@ class FlutterStoryPresenter extends StatefulWidget {
     this.onSlideUp,
     this.enableGestures = true,
     this.imageCacheManager,
+    this.imageFadeInDuration = const Duration(milliseconds: 400),
+    this.imageFadeOutDuration = const Duration(milliseconds: 600),
+    this.imageFadeInCurve = Curves.easeIn,
+    this.imageFadeOutCurve = Curves.easeOut,
     super.key,
   }) : assert(initialIndex < items.length);
 
@@ -117,6 +121,18 @@ class FlutterStoryPresenter extends StatefulWidget {
 
   /// Cache manager for the image.
   final CacheManager? imageCacheManager;
+
+  /// The duration of the fade in animation for network images.
+  final Duration imageFadeInDuration;
+
+  /// The duration of the fade out animation for network images.
+  final Duration imageFadeOutDuration;
+
+  /// The curve of the fade in animation for network images.
+  final Curve imageFadeInCurve;
+
+  /// The curve of the fade out animation for network images.
+  final Curve imageFadeOutCurve;
 
   @override
   State<FlutterStoryPresenter> createState() => _FlutterStoryPresenterState();
@@ -520,6 +536,10 @@ class _FlutterStoryPresenterState extends State<FlutterStoryPresenter>
           Positioned.fill(
             child: ImageStoryView(
               imageCacheManager: widget.imageCacheManager,
+              fadeInDuration: widget.imageFadeInDuration,
+              fadeOutDuration: widget.imageFadeOutDuration,
+              fadeInCurve: widget.imageFadeInCurve,
+              fadeOutCurve: widget.imageFadeOutCurve,
               key: ValueKey('$currentIndex'),
               storyItem: currentItem,
               onImageLoaded: (isLoaded) {
